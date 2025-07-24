@@ -40,22 +40,27 @@ angular.module('github_light', ['ngResource'])
             var toReturn;
             var repoDefinition = function () {
 
+                // repoDefinition scope independant this
+                var me = this;
+
                 // Shared state
-                this.owner = 'unknown';
-                this.name = 'unknown';
-                this.tagList = [];
-                this.completed = false;
+                me.owner = 'unknown';
+                me.name = 'unknown';
+                me.tagList = [];
+                me.completed = false;
 
                 // Public API
-                this.init = function (repoOwner, repoName, $scope) {
-                    this.owner = repoOwner;
-                    this.name = repoName;
+                me.init = function (repoOwner, repoName) {
+                    me.owner = repoOwner;
+                    me.name = repoName;
+
+                    me.tagList = [];
 
                     // Find the tag list
-                    this.tagList = tagService.list({prop: 'value'}, {owner: this.owner, name: this.name}, function () {
+                    me.tagListPromise = tagService.list({prop: 'value'}, {owner: me.owner, name: me.name}, function () {
                         toReturn.completed = true;
                     });
-                    this.tagList = (this.tagList.$promise || this.tagList).then((function(tags) {
+                    me.tagListPromise = (me.tagListPromise.$promise || me.tagListPromise).then((function(tags) {
                         // sort jaxb2-maven-plugin below jaxb-maven-plugin
                         tags.sort(function(a, b) {
                             if (a.name.startsWith("jaxb2-")) {
@@ -63,7 +68,7 @@ angular.module('github_light', ['ngResource'])
                             }
                             return 0;
                         });
-                        $scope.tagList = tags;
+                        me.tagList = tags;
                     }));
 
                     // All done.
@@ -73,8 +78,8 @@ angular.module('github_light', ['ngResource'])
                 /**
                  * @returns {boolean} True if the repo has defined tags, and false otherwise.
                  */
-                this.hasTags = function () {
-                    return this.tagList.length > 0;
+                me.hasTags = function () {
+                    return me.tagList.length > 0;
                 };
             };
 
@@ -89,5 +94,5 @@ angular.module('github_light', ['ngResource'])
         //
         // a) The Repo owner ("mojohaus" for all mojohaus repos)
         // b) The Repo name  ("jaxb2-maven-plugin" in this case; use appropriate repo ID)
-        $scope.repo = docsService.init('evolvedbinary', 'mojohaus-jaxb-maven-plugin', $scope);
+        $scope.repo = docsService.init('evolvedbinary', 'mojohaus-jaxb-maven-plugin');
     }]);
